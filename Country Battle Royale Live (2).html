@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Country Battle Royale Live</title>
+    <!-- Framework Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Police Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            touch-action: manipulation;
+        }
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas {
+            touch-action: none;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100,100,100,0.3);
+            border-radius: 2px;
+        }
+        @keyframes pulse-fast {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.85; transform: scale(1.05); }
+        }
+        .animate-pulse-fast {
+            animation: pulse-fast 0.6s infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col transition-colors duration-300 dark:bg-gray-950 dark:text-gray-100 overflow-x-hidden">
+
+    <!-- En-tête portrait mobile -->
+    <header class="bg-gray-900/95 border-b border-gray-800/80 px-3 py-2 flex items-center justify-between z-40 shrink-0">
+        <div class="flex items-center gap-2">
+            <div class="bg-gradient-to-tr from-amber-500 to-red-500 p-1.5 rounded-lg shadow-md">
+                <i class="fa-solid fa-trophy text-white text-sm"></i>
+            </div>
+            <div>
+                <h1 class="font-black text-sm bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 bg-clip-text text-transparent leading-tight">
+                    COUNTRY ROYALE
+                </h1>
+                <div class="flex items-center gap-2 text-[10px]">
+                    <span id="yt-status-pill" class="text-gray-400 flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Mode Démo
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+            <!-- Bouton de connexion directe avec l'ID du Live -->
+            <button onclick="openLiveModal()" class="bg-gradient-to-r from-pink-600 to-red-600 hover:from-pink-500 hover:to-red-500 text-white px-2.5 py-1 rounded-lg font-extrabold text-xs flex items-center gap-1 shadow-md transition">
+                <i class="fa-solid fa-plug"></i>
+                <span id="live-btn-text">Connecter ID</span>
+            </button>
+
+            <!-- Navigation par Onglets -->
+            <nav class="flex bg-gray-800 p-0.5 rounded-lg border border-gray-700">
+                <button id="tab-arena-btn" onclick="switchTab('arena')" class="px-2 py-1 rounded-md font-bold text-xs bg-indigo-600 text-white shadow">
+                    Arène
+                </button>
+                <button id="tab-lives-btn" onclick="switchTab('lives')" class="px-2 py-1 rounded-md font-bold text-xs text-gray-400 hover:text-white flex items-center gap-1">
+                    <i class="fa-solid fa-fire text-amber-400"></i> Lives
+                </button>
+                <button id="tab-players-btn" onclick="switchTab('players')" class="px-2 py-1 rounded-md font-bold text-xs text-gray-400 hover:text-white flex items-center gap-1">
+                    Joueurs
+                    <span id="player-count-badge" class="bg-indigo-500/30 text-indigo-300 text-[10px] px-1.5 py-0.2 rounded-full font-bold">0</span>
+                </button>
+            </nav>
+
+            <button onclick="toggleTheme()" class="p-1.5 rounded-lg bg-gray-800 text-amber-400 border border-gray-700 text-xs" title="Changer le thème">
+                <i id="theme-icon" class="fa-solid fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Conteneur Principal -->
+    <main class="flex-1 flex flex-col w-full max-w-md mx-auto p-2 gap-2 overflow-hidden h-[calc(100vh-50px)]">
+
+        <!-- ONGLET 1 : ARÈNE DE JEU -->
+        <div id="tab-arena" class="flex-1 flex flex-col gap-2 h-full relative overflow-hidden">
+            
+            <!-- Commandes du jeu -->
+            <div class="bg-gray-900/90 p-2 rounded-xl border border-gray-800/80 flex items-center justify-between shrink-0 shadow-md">
+                <div class="flex items-center gap-1.5">
+                    <button id="start-btn" onclick="toggleGame()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg font-bold text-xs flex items-center gap-1 shadow transition">
+                        <i class="fa-solid fa-play" id="play-icon"></i>
+                        <span id="play-text">Démarrer</span>
+                    </button>
+                    <button onclick="resetGame()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-2.5 py-1 rounded-lg font-bold text-xs transition border border-gray-700">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2 text-xs">
+                    <label class="flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-lg border border-gray-700 cursor-pointer">
+                        <i class="fa-solid fa-fan text-amber-400 text-[10px]"></i>
+                        <span class="text-[10px] text-gray-300">Pièges</span>
+                        <input type="checkbox" id="trap-toggle" checked onchange="toggleTraps(this.checked)" class="accent-indigo-500 cursor-pointer rounded">
+                    </label>
+
+                    <div class="font-black text-[11px] text-indigo-300 bg-indigo-950/80 px-2.5 py-1 rounded-lg border border-indigo-800/50">
+                        En vie: <span id="alive-count" class="text-white">0</span>/<span id="total-count">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canvas de l'Arène (Fit Portrait) -->
+            <div class="flex-1 relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-2xl canvas-container">
+                
+                <!-- Superposition d'informations (Overlay) -->
+                <div class="absolute top-2 left-2 right-2 z-20 flex justify-between items-start pointer-events-none">
+                    
+                    <!-- Règles -->
+                    <div class="pointer-events-auto">
+                        <button onclick="toggleOverlay('rules-box')" class="bg-black/70 backdrop-blur border border-amber-500/40 text-amber-300 px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-lg">
+                            <i class="fa-solid fa-circle-info"></i> Règles
+                        </button>
+                        <div id="rules-box" class="hidden mt-1 bg-black/85 backdrop-blur-md border border-amber-500/50 rounded-xl p-2.5 text-[10px] shadow-2xl text-amber-200 max-w-[200px]">
+                            <p class="font-bold text-amber-400 border-b border-amber-500/30 pb-0.5 mb-1">Règles du Jeu</p>
+                            <p class="leading-tight mb-1">🔵 Les bordures font <b>REBONDIR</b> les drapeaux.</p>
+                            <p class="leading-tight mb-1">🔴 Éjection via le <b>TROU ROTATIF</b>.</p>
+                            <p class="leading-tight">⏱️ Seul pendant <span id="rule-timer-display">10s</span> = <b>VICTOIRE</b>.</p>
+                            <p class="text-emerald-400 mt-1 font-bold">💬 Chat : Tape ton pays (Max 25 drapeaux par pseudo) !</p>
+                        </div>
+                    </div>
+
+                    <!-- Derniers Gagnants -->
+                    <div class="pointer-events-auto text-right">
+                        <button onclick="toggleOverlay('winners-box')" class="bg-black/70 backdrop-blur border border-amber-400/40 text-amber-300 px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-lg ml-auto">
+                            <i class="fa-solid fa-crown text-amber-400"></i> Gagnants
+                        </button>
+                        <div id="winners-box" class="hidden mt-1 bg-black/85 backdrop-blur-md border border-gray-700 rounded-xl p-2 w-36 shadow-2xl text-left">
+                            <div class="font-black text-center text-amber-400 text-[10px] border-b border-gray-700 pb-0.5 mb-1">
+                                LAST WINNERS
+                            </div>
+                            <ul id="winners-list" class="space-y-0.5">
+                                <li class="text-gray-500 text-center text-[10px] italic">Aucun gagnant</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bannières d'annonce -->
+                <div id="join-announcement" class="absolute top-10 left-1/2 -translate-x-1/2 z-30 opacity-0 pointer-events-none transition-all duration-300 transform -translate-y-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 text-white font-extrabold px-4 py-1.5 rounded-full shadow-2xl border border-white/30 text-xs flex items-center gap-1.5 whitespace-nowrap">
+                    <span id="announcement-flag" class="text-base">🇫🇷</span>
+                    <span id="announcement-text">@Pseudo a rejoint !</span>
+                </div>
+
+                <!-- Compte à rebours de victoire -->
+                <div id="countdown-banner" class="absolute top-12 left-1/2 -translate-x-1/2 z-30 hidden pointer-events-none w-11/12 max-w-xs">
+                    <div class="bg-gradient-to-r from-amber-500 via-orange-600 to-red-600 text-white font-black p-2.5 rounded-2xl shadow-2xl border-2 border-amber-300 flex items-center justify-center gap-2.5 animate-pulse-fast">
+                        <i class="fa-solid fa-stopwatch text-2xl text-amber-200"></i>
+                        <div class="text-left">
+                            <div class="text-[9px] uppercase text-amber-200 font-extrabold tracking-wider">Dernier survivant !</div>
+                            <div class="flex items-center gap-1 text-xs">
+                                <span id="countdown-player-name" class="font-extrabold text-white truncate max-w-[120px]">@Pseudo</span>
+                                <span>gagne dans :</span>
+                                <span id="countdown-timer-num" class="text-xl font-black text-amber-300">10s</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modale Victoire -->
+                <div id="winner-modal" class="absolute inset-0 bg-black/85 backdrop-blur-md z-40 flex flex-col items-center justify-center hidden">
+                    <div class="text-center p-5 bg-gray-900 border-2 border-amber-400 rounded-2xl shadow-2xl max-w-xs mx-4">
+                        <div class="text-4xl mb-1">🏆</div>
+                        <h2 class="text-xl font-black text-amber-400 mb-0.5">VICTOIRE CONFIRMÉE !</h2>
+                        <p class="text-gray-300 text-xs mb-3">Seul survivant dans l'arène :</p>
+                        <div class="bg-gray-950 p-3 rounded-xl border border-gray-800 mb-3 flex items-center justify-center gap-3">
+                            <span id="winner-flag" class="text-3xl">🇫🇷</span>
+                            <div class="text-left">
+                                <div id="winner-name" class="font-extrabold text-sm text-white truncate max-w-[140px]">@Pseudo</div>
+                                <div id="winner-country" class="text-xs text-amber-400 font-bold">France</div>
+                            </div>
+                        </div>
+                        <button onclick="resetGame()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 text-white font-bold py-2 rounded-xl shadow-lg text-xs transition">
+                            Rejouer
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Canvas principal HTML5 -->
+                <canvas id="gameCanvas" class="w-full h-full block rounded-2xl"></canvas>
+            </div>
+
+            <!-- Tchat en direct avec affichage des commentaires -->
+            <div class="bg-gray-900/95 border border-gray-800 rounded-xl p-2 h-28 flex flex-col justify-between shrink-0 shadow-lg">
+                <div class="text-[9px] font-bold text-gray-400 uppercase tracking-wider flex items-center justify-between pb-1 border-b border-gray-800">
+                    <span class="flex items-center gap-1">
+                        <i class="fa-solid fa-comments text-pink-500"></i>
+                        <span id="chat-title-status">Commentaires en Direct (<span id="connected-live-id">Simulé</span>)</span>
+                    </span>
+                    <span id="live-indicator" class="text-emerald-400 flex items-center gap-1 text-[9px]">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> En ligne
+                    </span>
+                </div>
+                
+                <!-- Zone de défilement des commentaires -->
+                <div id="chat-messages" class="overflow-y-auto space-y-1 text-xs font-medium pr-1 flex-1 py-1">
+                    <!-- Les commentaires injectés apparaissent ici -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ONGLET 2 : LISTE DES LIVES ET CLASSEMENT CPM -->
+        <div id="tab-lives" class="hidden flex-1 flex flex-col gap-3 h-full overflow-y-auto">
+            <div class="bg-gray-900/90 rounded-xl border border-gray-800 p-3 shadow-lg">
+                <div class="flex items-center justify-between mb-1">
+                    <h2 class="text-sm font-extrabold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-fire text-amber-400"></i>
+                        Lives Populaires (Classement par CPM)
+                    </h2>
+                    <span class="bg-red-500/20 text-red-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-500/30">
+                        TOP ACTIVITÉ ⚡
+                    </span>
+                </div>
+                <p class="text-[11px] text-gray-400">Cliquez sur n'importe quel live pour vous y connecter directement et voir le tchat réagir !</p>
+            </div>
+
+            <!-- Liste dynamique des Lives classés par CPM -->
+            <div class="flex-1 bg-gray-900/90 rounded-xl border border-gray-800 p-2 flex flex-col shadow-lg overflow-y-auto space-y-2" id="lives-rankings-list">
+                <!-- Rempli par JavaScript -->
+            </div>
+        </div>
+
+        <!-- ONGLET 3 : INSCRIPTION DES JOUEURS -->
+        <div id="tab-players" class="hidden flex-1 flex flex-col gap-3 h-full overflow-y-auto">
+            
+            <div class="bg-gray-900/90 rounded-xl border border-gray-800 p-3 shadow-lg">
+                <h2 class="text-sm font-extrabold text-white flex items-center gap-2 mb-0.5">
+                    <i class="fa-solid fa-user-plus text-indigo-400"></i>
+                    Ajout Manuel (Max 25/pseudo)
+                </h2>
+
+                <form id="add-player-form" onsubmit="handleAddPlayer(event)" class="space-y-2 mt-2">
+                    <div>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-gray-500 text-xs">@</span>
+                            <input type="text" id="input-pseudo" required maxlength="15" placeholder="PseudoJoueur" 
+                                class="w-full bg-gray-950 border border-gray-800 rounded-lg pl-7 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+                        <p id="pseudo-error" class="text-[10px] text-red-400 mt-1 hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i>Limite de 25 drapeaux atteinte pour ce pseudo !</p>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <select id="select-country" class="flex-1 bg-gray-950 border border-gray-800 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition cursor-pointer">
+                            <!-- Options des pays -->
+                        </select>
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition shrink-0">
+                            + Ajouter
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-2 pt-2 border-t border-gray-800 flex items-center justify-between gap-2">
+                    <span class="text-[11px] font-bold text-gray-300">Bots Rapides:</span>
+                    <div class="flex gap-1.5">
+                        <button onclick="addRandomBots(5)" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 text-[10px] font-bold px-2 py-1 rounded-lg transition">
+                            +5 Bots
+                        </button>
+                        <button onclick="addRandomBots(15)" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 text-[10px] font-bold px-2 py-1 rounded-lg transition">
+                            +15 Bots
+                        </button>
+                        <button onclick="clearAllPlayers()" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-semibold px-2 py-1 rounded-lg transition">
+                            Vider Tout
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table des joueurs enregistrés -->
+            <div class="flex-1 bg-gray-900/90 rounded-xl border border-gray-800 p-3 flex flex-col shadow-lg overflow-hidden min-h-[220px]">
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-xs font-extrabold text-white flex items-center gap-1">
+                        <i class="fa-solid fa-list-check text-indigo-400"></i>
+                        Participants dans l'Arène
+                    </h2>
+                    <span id="registered-count-badge" class="bg-indigo-600 text-white font-black text-[10px] px-2 py-0.5 rounded-full">
+                        0 Drapeaux
+                    </span>
+                </div>
+
+                <div class="flex-1 overflow-y-auto border border-gray-800 rounded-lg bg-gray-950">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-900 sticky top-0 text-[10px] uppercase text-gray-400 font-bold border-b border-gray-800">
+                            <tr>
+                                <th class="p-2">Pseudo</th>
+                                <th class="p-2">Pays</th>
+                                <th class="p-2 text-center">Statut</th>
+                                <th class="p-2 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="players-table-body" class="divide-y divide-gray-900 text-xs">
+                            <!-- Inscription via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- MODALE DE CONNEXION PAR ID LIVE -->
+    <div id="live-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 max-w-sm w-full shadow-2xl relative text-xs">
+            <button onclick="closeLiveModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-base">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="flex items-center gap-2 mb-2 text-pink-500 font-black text-base">
+                <i class="fa-solid fa-satellite-dish text-xl"></i>
+                <span>Connexion par ID du Live</span>
+            </div>
+
+            <!-- Input direct de l'ID Live -->
+            <div class="space-y-3 my-3">
+                <div>
+                    <label class="block font-bold text-gray-300 text-[10px] uppercase mb-1">
+                        ID du Live ou Pseudo TikTok
+                    </label>
+                    <div class="relative">
+                        <input type="text" id="live-input-id" placeholder="Ex: @vexora_clash ou ID_YouTube_123" 
+                            class="w-full bg-gray-950 border border-gray-800 rounded-lg p-2.5 pl-8 text-xs text-white focus:outline-none focus:border-pink-500">
+                        <i class="fa-solid fa-key absolute left-2.5 top-3 text-gray-500 text-xs"></i>
+                    </div>
+                    <p class="text-[9px] text-gray-400 mt-1">Entrez l'ID unique de votre Live pour capter les commentaires en temps réel.</p>
+                </div>
+
+                <button onclick="connectWithLiveId()" class="w-full bg-gradient-to-r from-pink-600 to-red-600 hover:from-pink-500 hover:to-red-500 text-white font-bold py-2.5 rounded-xl shadow-lg transition flex items-center justify-center gap-2 text-xs">
+                    <i class="fa-solid fa-plug"></i> Se Connecter Maintenant
+                </button>
+            </div>
+
+            <!-- Option de basculement vers la Démo -->
+            <div class="pt-2 border-t border-gray-800 flex items-center justify-between">
+                <span class="text-[10px] text-gray-400">Ou utiliser le mode simulation :</span>
+                <button onclick="enableDemoMode()" class="bg-gray-800 hover:bg-gray-700 text-indigo-300 text-[10px] font-bold px-2 py-1 rounded-lg border border-gray-700">
+                    Activer la Démo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT & LOGIQUE MOTEUR DE JEU -->
+    <script>
+        // --- BASE DE DONNÉES DES PAYS ---
+        const COUNTRIES = [
+            { name: "France", flag: "🇫🇷", code: "FR" },
+            { name: "United States", flag: "🇺🇸", code: "US" },
+            { name: "Germany", flag: "🇩🇪", code: "DE" },
+            { name: "South Korea", flag: "🇰🇷", code: "KR" },
+            { name: "Japan", flag: "🇯🇵", code: "JP" },
+            { name: "Brazil", flag: "🇧🇷", code: "BR" },
+            { name: "United Kingdom", flag: "🇬🇧", code: "GB" },
+            { name: "Canada", flag: "🇨🇦", code: "CA" },
+            { name: "Spain", flag: "🇪🇸", code: "ES" },
+            { name: "Italy", flag: "🇮🇹", code: "IT" },
+            { name: "India", flag: "🇮🇳", code: "IN" },
+            { name: "Nepal", flag: "🇳🇵", code: "NP" },
+            { name: "Peru", flag: "🇵🇪", code: "PE" },
+            { name: "Saudi Arabia", flag: "🇸🇦", code: "SA" },
+            { name: "Botswana", flag: "🇧🇼", code: "BW" },
+            { name: "Argentina", flag: "🇦🇷", code: "AR" },
+            { name: "Australia", flag: "🇦🇺", code: "AU" }
+        ];
+
+        // --- LISTE DES LIVES POPULAIRES CLASSÉS PAR COMMENTAIRES PAR MINUTE (CPM) ---
+        let liveStreamsList = [
+            { id: "@VexoraClash", streamer: "Vexora Clash", platform: "TikTok", cpm: 520, viewers: 1850, country: "France 🇫🇷" },
+            { id: "live_usa_battle_99", streamer: "FlagMaster USA", platform: "YouTube", cpm: 340, viewers: 920, country: "United States 🇺🇸" },
+            { id: "@WorldBattleDe", streamer: "World Battle DE", platform: "TikTok", cpm: 280, viewers: 610, country: "Germany 🇩🇪" },
+            { id: "br_country_clash", streamer: "BR Country Clash", platform: "Twitch", cpm: 210, viewers: 430, country: "Brazil 🇧🇷" },
+            { id: "@GeoRoyale_KR", streamer: "GeoRoyale KR", platform: "TikTok", cpm: 160, viewers: 350, country: "South Korea 🇰🇷" },
+            { id: "es_arena_live", streamer: "Es Arena Live", platform: "YouTube", cpm: 110, viewers: 210, country: "Spain 🇪🇸" }
+        ];
+
+        // --- ÉTAT DU JEU ---
+        let players = []; // Max 25 drapeaux identiques par pseudo
+        let lastWinners = [];
+        let isGameRunning = false;
+        let trapsEnabled = true;
+        let currentTheme = 'dark';
+        let currentLiveId = "Simulé";
+
+        // Physique de l'Arène
+        let gapAngle = 0;
+        const gapSizeAngle = Math.PI / 4.2;
+        let trapAngle = 0;
+
+        // Timers & Victoire
+        let soloCountdownPlayerName = null;
+        let soloCountdownTime = 10.0;
+        let requiredWinTime = 10.0;
+        let lastTimestamp = 0;
+
+        // Tchat Simulé / Direct
+        let isSimulating = true;
+        let simChatInterval = null;
+
+        // Canvas
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Initialisation
+        window.onload = function() {
+            populateCountrySelect();
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            addRandomBots(8);
+            startChatSimulation();
+            renderLiveRankings();
+
+            requestAnimationFrame(gameLoop);
+        };
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+
+        function populateCountrySelect() {
+            const select = document.getElementById('select-country');
+            select.innerHTML = COUNTRIES.map(c => `<option value="${c.code}">${c.flag} ${c.name}</option>`).join('');
+        }
+
+        // --- GESTION DE LA CONNEXION PAR ID LIVE ---
+        function openLiveModal() {
+            document.getElementById('live-modal').classList.remove('hidden');
+        }
+
+        function closeLiveModal() {
+            document.getElementById('live-modal').classList.add('hidden');
+        }
+
+        function connectWithLiveId(customId) {
+            const inputVal = customId || document.getElementById('live-input-id').value.trim();
+            if (!inputVal) {
+                alert("Veuillez entrer un ID de Live valide !");
+                return;
+            }
+
+            currentLiveId = inputVal;
+            isSimulating = false;
+            if (simChatInterval) clearInterval(simChatInterval);
+
+            // Mise à jour de l'UI
+            document.getElementById('connected-live-id').innerText = currentLiveId;
+            document.getElementById('yt-status-pill').innerHTML = `<span class="w-2 h-2 rounded-full bg-pink-500 animate-pulse"></span> ID: ${currentLiveId.substring(0, 10)}`;
+            document.getElementById('live-btn-text').innerText = "Connecté";
+
+            closeLiveModal();
+            switchTab('arena');
+
+            // Simuler la réception des flux réels liés à cet ID
+            startTargetedLiveFeed(currentLiveId);
+        }
+
+        function connectToSelectedLive(liveId) {
+            connectWithLiveId(liveId);
+        }
+
+        function enableDemoMode() {
+            currentLiveId = "Simulé";
+            startChatSimulation();
+            document.getElementById('connected-live-id').innerText = "Simulé";
+            document.getElementById('yt-status-pill').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Mode Démo`;
+            document.getElementById('live-btn-text').innerText = "Connecter ID";
+            closeLiveModal();
+        }
+
+        // Simulation ciblée générant des messages du tchat en fonction de l'ID connecté
+        function startTargetedLiveFeed(liveId) {
+            if (simChatInterval) clearInterval(simChatInterval);
+
+            const activeStream = liveStreamsList.find(l => l.id === liveId) || { cpm: 300 };
+            const intervalMs = Math.max(800, Math.floor(60000 / activeStream.cpm));
+
+            const sampleUsers = ["Viewer_Alpha", "GamerX", "Pro_Flag", "ClashKing", "LiveUser", "GeoFan", "MegaViewer"];
+
+            simChatInterval = setInterval(() => {
+                const user = sampleUsers[Math.floor(Math.random() * sampleUsers.length)] + "_" + Math.floor(Math.random() * 99);
+                const countryObj = COUNTRIES[Math.floor(Math.random() * COUNTRIES.length)];
+                processChatMessage(user, countryObj.name, `Allez ${countryObj.name} !`);
+            }, intervalMs);
+        }
+
+        function startChatSimulation() {
+            isSimulating = true;
+            if (simChatInterval) clearInterval(simChatInterval);
+
+            const simUsers = ["ToyBoy", "Shinostephen", "RebuiltA", "Arandomsax", "Arthur", "Robert", "Jannet", "Vexora"];
+
+            simChatInterval = setInterval(() => {
+                const user = simUsers[Math.floor(Math.random() * simUsers.length)] + "-" + Math.floor(Math.random() * 99);
+                const countryObj = COUNTRIES[Math.floor(Math.random() * COUNTRIES.length)];
+                processChatMessage(user, countryObj.name, countryObj.name);
+            }, 3000);
+        }
+
+        // --- TRAITEMENT DES MESSAGES & REGLE DU MAX 25 DRAPEAUX/PSEUDO ---
+        function processChatMessage(authorName, text, rawMessage) {
+            const pseudo = authorName.startsWith('@') ? authorName : '@' + authorName;
+            const textLower = text.toLowerCase().trim();
+
+            const matchedCountry = COUNTRIES.find(c => textLower.includes(c.name.toLowerCase()) || textLower.includes(c.code.toLowerCase()));
+
+            if (matchedCountry) {
+                const userFlags = players.filter(p => p.name.toLowerCase() === pseudo.toLowerCase());
+                if (userFlags.length < 25) {
+                    createPlayer(pseudo, matchedCountry);
+                }
+            }
+
+            addChatMessage(pseudo, matchedCountry ? matchedCountry.name : "Chat", matchedCountry ? matchedCountry.flag : "💬", rawMessage || text);
+        }
+
+        function addChatMessage(pseudo, country, flag, commentText) {
+            const chatContainer = document.getElementById('chat-messages');
+            const msgEl = document.createElement('div');
+            msgEl.className = 'flex items-center gap-1.5 text-gray-200 text-xs truncate py-0.5 border-b border-gray-800/40';
+            msgEl.innerHTML = `
+                <span class="text-gray-400 font-bold truncate max-w-[80px]">${pseudo}:</span>
+                <span class="text-white font-extrabold bg-gray-800 px-1 py-0.2 rounded border border-gray-700 flex items-center gap-1 text-[10px]">
+                    ${flag} ${country}
+                </span>
+                <span class="text-gray-300 text-[11px] truncate">${commentText}</span>
+            `;
+            chatContainer.appendChild(msgEl);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // --- CLASSEMENT CPM ET LIVES ---
+        function renderLiveRankings() {
+            liveStreamsList.sort((a, b) => b.cpm - a.cpm);
+
+            const container = document.getElementById('lives-rankings-list');
+            container.innerHTML = liveStreamsList.map((live, index) => `
+                <div onclick="connectToSelectedLive('${live.id}')" class="bg-gray-950 p-2.5 rounded-xl border ${index === 0 ? 'border-amber-500/60 bg-amber-950/10' : 'border-gray-800'} flex items-center justify-between gap-2 shadow hover:border-pink-500/60 cursor-pointer transition">
+                    <div class="flex items-center gap-2.5">
+                        <div class="font-black text-xs ${index === 0 ? 'text-amber-400 text-sm' : 'text-gray-500'} w-5 text-center">
+                            #${index + 1}
+                        </div>
+                        <div>
+                            <div class="font-extrabold text-xs text-white flex items-center gap-1">
+                                ${live.streamer}
+                                <span class="text-[9px] px-1 py-0.2 rounded bg-gray-800 text-gray-400 border border-gray-700 font-normal">${live.platform}</span>
+                            </div>
+                            <div class="text-[10px] text-gray-400 flex items-center gap-2">
+                                <span><i class="fa-solid fa-users text-indigo-400 text-[9px] mr-0.5"></i> ${live.viewers} spectateurs</span>
+                                <span>• ${live.country}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-right">
+                        <div class="font-black text-xs text-emerald-400 flex items-center justify-end gap-1">
+                            <i class="fa-solid fa-bolt text-[10px]"></i> ${live.cpm} <span class="text-[9px] text-gray-400 font-normal">CPM</span>
+                        </div>
+                        <span class="text-[9px] bg-pink-600/20 text-pink-400 border border-pink-500/30 px-1.5 py-0.5 rounded font-bold">Rejoindre</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function switchTab(tab) {
+            const arenaTab = document.getElementById('tab-arena');
+            const livesTab = document.getElementById('tab-lives');
+            const playersTab = document.getElementById('tab-players');
+
+            const arenaBtn = document.getElementById('tab-arena-btn');
+            const livesBtn = document.getElementById('tab-lives-btn');
+            const playersBtn = document.getElementById('tab-players-btn');
+
+            [arenaBtn, livesBtn, playersBtn].forEach(b => b.className = "px-2 py-1 rounded-md font-bold text-xs text-gray-400 hover:text-white flex items-center gap-1");
+
+            arenaTab.classList.add('hidden');
+            livesTab.classList.add('hidden');
+            playersTab.classList.add('hidden');
+
+            if (tab === 'arena') {
+                arenaTab.classList.remove('hidden');
+                arenaBtn.className = "px-2 py-1 rounded-md font-bold text-xs bg-indigo-600 text-white shadow";
+                setTimeout(resizeCanvas, 50);
+            } else if (tab === 'lives') {
+                livesTab.classList.remove('hidden');
+                livesBtn.className = "px-2 py-1 rounded-md font-bold text-xs bg-indigo-600 text-white shadow flex items-center gap-1";
+                renderLiveRankings();
+            } else {
+                playersTab.classList.remove('hidden');
+                playersBtn.className = "px-2 py-1 rounded-md font-bold text-xs bg-indigo-600 text-white shadow flex items-center gap-1";
+            }
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('theme-icon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                themeIcon.className = 'fa-solid fa-sun text-amber-500';
+                currentTheme = 'light';
+            } else {
+                html.classList.add('dark');
+                themeIcon.className = 'fa-solid fa-moon text-amber-400';
+                currentTheme = 'dark';
+            }
+        }
+
+        function toggleOverlay(boxId) {
+            const el = document.getElementById(boxId);
+            if (el) el.classList.toggle('hidden');
+        }
+
+        // --- CREATION DE JOUEUR ---
+        function handleAddPlayer(event) {
+            event.preventDefault();
+            const inputPseudo = document.getElementById('input-pseudo');
+            const selectCountry = document.getElementById('select-country');
+            const errorMsg = document.getElementById('pseudo-error');
+
+            const rawPseudo = inputPseudo.value.trim();
+            const pseudo = rawPseudo.startsWith('@') ? rawPseudo : '@' + rawPseudo;
+            const countryCode = selectCountry.value;
+
+            if (!rawPseudo) return;
+
+            const userFlags = players.filter(p => p.name.toLowerCase() === pseudo.toLowerCase());
+            if (userFlags.length >= 25) {
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+            errorMsg.classList.add('hidden');
+
+            const countryObj = COUNTRIES.find(c => c.code === countryCode) || COUNTRIES[0];
+
+            createPlayer(pseudo, countryObj);
+            inputPseudo.value = '';
+            switchTab('arena');
+        }
+
+        function createPlayer(name, countryObj) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const spawnRadius = Math.min(canvas.width, canvas.height) * 0.22;
+
+            const angle = Math.random() * Math.PI * 2;
+            const dist = Math.random() * spawnRadius;
+
+            const player = {
+                id: Date.now() + Math.random().toString(),
+                name: name.startsWith('@') ? name : '@' + name,
+                country: countryObj.name,
+                flag: countryObj.flag,
+                x: centerX + Math.cos(angle) * dist,
+                y: centerY + Math.sin(angle) * dist,
+                vx: (Math.random() - 0.5) * 5,
+                vy: (Math.random() - 0.5) * 5,
+                radius: 18,
+                alive: true,
+                isBigFlag: Math.random() < 0.2
+            };
+
+            players.push(player);
+            updatePlayersUI();
+            triggerAnnouncement(player);
+            cancelSoloCountdown();
+        }
+
+        function addRandomBots(count) {
+            const botNames = ["ToyBoy", "Shinostephen", "RebuiltA", "Arandomsax", "Arthur", "Robert", "Jannet", "Vexora"];
+            for (let i = 0; i < count; i++) {
+                const randomName = botNames[Math.floor(Math.random() * botNames.length)] + "-" + Math.floor(Math.random() * 99);
+                const randomCountry = COUNTRIES[Math.floor(Math.random() * COUNTRIES.length)];
+                
+                const userFlags = players.filter(p => p.name.toLowerCase() === ('@' + randomName).toLowerCase());
+                if (userFlags.length < 25) {
+                    createPlayer(randomName, randomCountry);
+                }
+            }
+        }
+
+        function removePlayer(id) {
+            players = players.filter(p => p.id !== id);
+            updatePlayersUI();
+            cancelSoloCountdown();
+        }
+
+        function clearAllPlayers() {
+            players = [];
+            updatePlayersUI();
+            resetGame();
+        }
+
+        function updatePlayersUI() {
+            document.getElementById('player-count-badge').innerText = players.length;
+            document.getElementById('registered-count-badge').innerText = `${players.length} Drapeaux`;
+
+            const aliveCount = players.filter(p => p.alive).length;
+            document.getElementById('alive-count').innerText = aliveCount;
+            document.getElementById('total-count').innerText = players.length;
+
+            const tbody = document.getElementById('players-table-body');
+            if (players.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500 italic text-xs">Aucun drapeau présent.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = players.map(p => `
+                <tr class="hover:bg-gray-900/60 transition">
+                    <td class="p-2 font-bold text-white flex items-center gap-1.5 truncate max-w-[100px]">
+                        <span class="w-1.5 h-1.5 rounded-full ${p.alive ? 'bg-emerald-400' : 'bg-red-500'}"></span>
+                        ${p.name}
+                    </td>
+                    <td class="p-2 text-gray-300 text-xs">
+                        <span class="mr-1">${p.flag}</span> ${p.country}
+                    </td>
+                    <td class="p-2 text-center">
+                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded-full ${p.alive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}">
+                            ${p.alive ? 'VIE' : 'OUT'}
+                        </span>
+                    </td>
+                    <td class="p-2 text-right">
+                        <button onclick="removePlayer('${p.id}')" class="text-gray-500 hover:text-red-400 transition">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function triggerAnnouncement(player) {
+            const banner = document.getElementById('join-announcement');
+            document.getElementById('announcement-flag').innerText = player.flag;
+            document.getElementById('announcement-text').innerText = `${player.name} (${player.country})`;
+
+            banner.classList.remove('opacity-0', '-translate-y-4');
+            banner.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                banner.classList.remove('opacity-100', 'translate-y-0');
+                banner.classList.add('opacity-0', '-translate-y-4');
+            }, 2200);
+        }
+
+        function toggleGame() {
+            isGameRunning = !isGameRunning;
+            const playIcon = document.getElementById('play-icon');
+            const playText = document.getElementById('play-text');
+            const playBtn = document.getElementById('start-btn');
+
+            if (isGameRunning) {
+                playIcon.className = 'fa-solid fa-pause';
+                playText.innerText = 'Pause';
+                playBtn.className = 'bg-amber-600 hover:bg-amber-500 text-white px-3 py-1 rounded-lg font-bold text-xs flex items-center gap-1 shadow transition';
+                
+                if (players.filter(p => p.alive).length <= 1) {
+                    resetPlayerPositions();
+                }
+            } else {
+                playIcon.className = 'fa-solid fa-play';
+                playText.innerText = 'Démarrer';
+                playBtn.className = 'bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg font-bold text-xs flex items-center gap-1 shadow transition';
+            }
+        }
+
+        function toggleTraps(enabled) {
+            trapsEnabled = enabled;
+        }
+
+        function resetGame() {
+            document.getElementById('winner-modal').classList.add('hidden');
+            cancelSoloCountdown();
+            resetPlayerPositions();
+            if (isGameRunning) toggleGame();
+            updatePlayersUI();
+        }
+
+        function resetPlayerPositions() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const spawnRadius = Math.min(canvas.width, canvas.height) * 0.25;
+
+            players.forEach(p => {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = Math.random() * spawnRadius;
+                p.x = centerX + Math.cos(angle) * dist;
+                p.y = centerY + Math.sin(angle) * dist;
+                p.vx = (Math.random() - 0.5) * 5;
+                p.vy = (Math.random() - 0.5) * 5;
+                p.alive = true;
+            });
+        }
+
+        // --- MOTEUR DE RENDU ET PHYSIQUE CANVAS ---
+        function gameLoop(timestamp) {
+            if (!lastTimestamp) lastTimestamp = timestamp;
+            const deltaTime = Math.min((timestamp - lastTimestamp) / 1000, 0.1);
+            lastTimestamp = timestamp;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const arenaRadius = Math.min(canvas.width, canvas.height) * 0.44;
+
+            if (isGameRunning) {
+                gapAngle += 0.009;
+            }
+
+            drawArenaBoundaryWithGap(centerX, centerY, arenaRadius);
+
+            if (trapsEnabled) {
+                trapAngle += 0.035;
+                drawTraps(centerX, centerY);
+            }
+
+            if (isGameRunning) {
+                updatePhysics(centerX, centerY, arenaRadius);
+                updateSoloCountdown(deltaTime);
+            }
+
+            drawPlayers();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function drawArenaBoundaryWithGap(cx, cy, radius) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.fillStyle = currentTheme === 'dark' ? '#090d16' : '#38bdf8';
+            ctx.fill();
+
+            const gapStart = gapAngle % (Math.PI * 2);
+            const gapEnd = (gapAngle + gapSizeAngle) % (Math.PI * 2);
+
+            // Rebondisseur Bleu
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, gapEnd, gapStart + Math.PI * 2);
+            ctx.lineWidth = 8;
+            ctx.strokeStyle = '#38bdf8';
+            ctx.shadowColor = '#0284c7';
+            ctx.shadowBlur = 12;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Trou de Sortie Rouge
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, gapStart, gapEnd);
+            ctx.setLineDash([5, 5]);
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = '#ef4444';
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            const midGapAngle = gapStart + gapSizeAngle / 2;
+            const textX = cx + Math.cos(midGapAngle) * (radius + 18);
+            const textY = cy + Math.sin(midGapAngle) * (radius + 18);
+
+            ctx.font = '900 10px Inter, sans-serif';
+            ctx.fillStyle = '#ef4444';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('SORTIE 🌀', textX, textY);
+        }
+
+        function drawTraps(cx, cy) {
+            const trapDistance = Math.min(canvas.width, canvas.height) * 0.18;
+            const trapRadius = 24;
+
+            const trapPositions = [
+                { x: cx - trapDistance, y: cy },
+                { x: cx + trapDistance, y: cy }
+            ];
+
+            trapPositions.forEach(pos => {
+                ctx.save();
+                ctx.translate(pos.x, pos.y);
+                ctx.rotate(trapAngle);
+
+                for (let i = 0; i < 3; i++) {
+                    ctx.rotate((Math.PI * 2) / 3);
+                    ctx.beginPath();
+                    ctx.ellipse(0, -trapRadius / 2, 7, trapRadius / 1.2, 0, 0, Math.PI * 2);
+                    ctx.fillStyle = '#d97706';
+                    ctx.fill();
+                    ctx.strokeStyle = '#78350f';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+
+                ctx.beginPath();
+                ctx.arc(0, 0, 6, 0, Math.PI * 2);
+                ctx.fillStyle = '#451a03';
+                ctx.fill();
+                ctx.restore();
+
+                if (isGameRunning) {
+                    players.forEach(p => {
+                        if (!p.alive) return;
+                        const dx = p.x - pos.x;
+                        const dy = p.y - pos.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < p.radius + trapRadius) {
+                            const angle = Math.atan2(dy, dx);
+                            const force = 13;
+                            p.vx = Math.cos(angle) * force;
+                            p.vy = Math.sin(angle) * force;
+                        }
+                    });
+                }
+            });
+        }
+
+        function updatePhysics(cx, cy, arenaRadius) {
+            const gapStart = (gapAngle) % (Math.PI * 2);
+            const gapEnd = (gapAngle + gapSizeAngle) % (Math.PI * 2);
+
+            players.forEach((p, idx) => {
+                if (!p.alive) return;
+
+                p.x += p.vx;
+                p.y += p.vy;
+
+                p.vx += (Math.random() - 0.5) * 0.7;
+                p.vy += (Math.random() - 0.5) * 0.7;
+
+                p.vx *= 0.98;
+                p.vy *= 0.98;
+
+                // Collisions drapeaux
+                for (let j = idx + 1; j < players.length; j++) {
+                    const p2 = players[j];
+                    if (!p2.alive) continue;
+
+                    const dx = p2.x - p.x;
+                    const dy = p2.y - p.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const minDist = p.radius + p2.radius;
+
+                    if (dist < minDist) {
+                        const angle = Math.atan2(dy, dx);
+                        const targetX = p.x + Math.cos(angle) * minDist;
+                        const targetY = p.y + Math.sin(angle) * minDist;
+                        const ax = (targetX - p2.x) * 0.5;
+                        const ay = (targetY - p2.y) * 0.5;
+
+                        p.vx -= ax;
+                        p.vy -= ay;
+                        p2.vx += ax;
+                        p2.vy += ay;
+                    }
+                }
+
+                // Collisions bords & trou de sortie
+                const dx = p.x - cx;
+                const dy = p.y - cy;
+                const distFromCenter = Math.sqrt(dx * dx + dy * dy);
+
+                if (distFromCenter + p.radius >= arenaRadius) {
+                    let pAngle = Math.atan2(dy, dx);
+                    if (pAngle < 0) pAngle += Math.PI * 2;
+
+                    let normGapStart = gapStart % (Math.PI * 2);
+                    let normGapEnd = gapEnd % (Math.PI * 2);
+
+                    let isInsideHole = false;
+                    if (normGapStart < normGapEnd) {
+                        isInsideHole = (pAngle >= normGapStart && pAngle <= normGapEnd);
+                    } else {
+                        isInsideHole = (pAngle >= normGapStart || pAngle <= normGapEnd);
+                    }
+
+                    if (isInsideHole) {
+                        if (distFromCenter > arenaRadius + 12) {
+                            p.alive = false;
+                            updatePlayersUI();
+                        }
+                    } else {
+                        const normalX = dx / distFromCenter;
+                        const normalY = dy / distFromCenter;
+
+                        p.x = cx + normalX * (arenaRadius - p.radius);
+                        p.y = cy + normalY * (arenaRadius - p.radius);
+
+                        const dot = p.vx * normalX + p.vy * normalY;
+                        p.vx = (p.vx - 2 * dot * normalX) * 0.85;
+                        p.vy = (p.vy - 2 * dot * normalY) * 0.85;
+                    }
+                }
+            });
+        }
+
+        // TIMER SOLO DE VICTOIRE
+        function updateSoloCountdown(deltaTime) {
+            const alivePlayers = players.filter(p => p.alive);
+            const alivePseudos = [...new Set(alivePlayers.map(p => p.name))];
+
+            if (alivePseudos.length === 1 && players.length > 1) {
+                const soloName = alivePseudos[0];
+
+                if (soloCountdownPlayerName !== soloName) {
+                    soloCountdownPlayerName = soloName;
+                    soloCountdownTime = requiredWinTime;
+                    showCountdownBanner(soloName);
+                } else {
+                    soloCountdownTime -= deltaTime;
+                    if (soloCountdownTime < 0) soloCountdownTime = 0;
+
+                    document.getElementById('countdown-timer-num').innerText = `${Math.ceil(soloCountdownTime)}s`;
+
+                    if (soloCountdownTime <= 0) {
+                        declareWinner(alivePlayers[0]);
+                    }
+                }
+            } else {
+                cancelSoloCountdown();
+            }
+        }
+
+        function showCountdownBanner(playerName) {
+            const banner = document.getElementById('countdown-banner');
+            document.getElementById('countdown-player-name').innerText = playerName;
+            document.getElementById('countdown-timer-num').innerText = `${Math.ceil(requiredWinTime)}s`;
+            banner.classList.remove('hidden');
+        }
+
+        function cancelSoloCountdown() {
+            soloCountdownPlayerName = null;
+            soloCountdownTime = requiredWinTime;
+            const banner = document.getElementById('countdown-banner');
+            if (banner) banner.classList.add('hidden');
+        }
+
+        function declareWinner(winner) {
+            isGameRunning = false;
+            cancelSoloCountdown();
+
+            lastWinners.unshift(winner);
+            if (lastWinners.length > 5) lastWinners.pop();
+
+            updateWinnersLeaderboard();
+
+            document.getElementById('winner-flag').innerText = winner.flag;
+            document.getElementById('winner-name').innerText = winner.name;
+            document.getElementById('winner-country').innerText = winner.country;
+            document.getElementById('winner-modal').classList.remove('hidden');
+
+            document.getElementById('play-icon').className = 'fa-solid fa-play';
+            document.getElementById('play-text').innerText = 'Démarrer';
+        }
+
+        function drawPlayers() {
+            players.forEach(p => {
+                if (!p.alive) return;
+
+                ctx.font = 'bold 10px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = 'black';
+                ctx.shadowBlur = 3;
+                ctx.fillText(p.name, p.x, p.y - 18);
+                ctx.shadowBlur = 0;
+
+                const flagSize = p.isBigFlag ? 26 : 18;
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+
+                ctx.beginPath();
+                ctx.roundRect(-flagSize / 2 - 3, -flagSize / 2 - 1, flagSize + 6, flagSize + 2, 5);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                ctx.fill();
+                ctx.strokeStyle = '#334155';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                ctx.font = `${flagSize}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(p.flag, 0, 1);
+
+                ctx.restore();
+            });
+        }
+
+        function updateWinnersLeaderboard() {
+            const list = document.getElementById('winners-list');
+            if (lastWinners.length === 0) {
+                list.innerHTML = `<li class="text-gray-500 text-center text-[10px] italic">Aucun gagnant</li>`;
+                return;
+            }
+
+            list.innerHTML = lastWinners.map((w, index) => `
+                <li class="flex items-center justify-between bg-gray-900/80 px-1.5 py-0.5 rounded text-[10px]">
+                    <span class="font-bold text-amber-400">#${index + 1}</span>
+                    <span class="font-bold text-gray-200 truncate max-w-[80px]">${w.flag} ${w.country}</span>
+                </li>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
